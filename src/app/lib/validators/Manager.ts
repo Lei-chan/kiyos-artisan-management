@@ -30,6 +30,7 @@ const Manager = z.object({
     .regex(/[^a-zA-Z0-9\s]/, {
       error: `Please contain at least ${MIN_EACH_PASSWORD} special character`,
     }),
+  isAllowedToAdd: z.boolean(),
 });
 
 export default Manager;

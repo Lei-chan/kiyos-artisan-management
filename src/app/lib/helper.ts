@@ -4,7 +4,7 @@ import { MyError } from "./definitions";
 const isMyError = (err: unknown): err is MyError => err instanceof Error;
 
 export const handleErrors = (
-  type: "notFound" | "zodError" | "others",
+  type: "notFound" | "zodError" | "unauthorized" | "others",
   err?: unknown,
   zodError?: z.ZodError,
 ) => {
@@ -18,6 +18,9 @@ export const handleErrors = (
 
     return { error: { message: fieldErrors, status: 400 } };
   }
+
+  if (type === "unauthorized")
+    return { error: { message: "Unauthorized", status: 403 } };
 
   if (isMyError(err)) {
     console.error("Error", err);

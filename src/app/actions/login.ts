@@ -1,24 +1,35 @@
 "use server";
+import { redirect } from "next/navigation";
 import dbConnect from "../lib/database";
 import { FormState } from "../lib/definitions";
 import { handleErrors } from "../lib/helper";
 import Manager from "../lib/models/Manager";
 import { createSession } from "../lib/session";
+import bcrypt from "bcrypt";
 
 export async function login(formState: FormState, formData: FormData) {
   try {
-    const data = {
+    const { username, password } = {
       username: String(formData.get("username")).trim(),
       password: String(formData.get("password")),
     };
 
     await dbConnect();
-    const manager = await Manager.findOne({ username: data.username });
+    const manager = await Manager.findOne({ username }).select("password");
     if (!manager) return handleErrors("notFound");
 
+    console.log(manager);
+    // compare password
+    const isValidPassword = await bcrypt.compare(password, manager.password);
+    console.log(isValidPassword);
+
+    if (!isValidPassword) return handleErrors("unauthorized");
+
     await createSession(manager._id);
-    return { message: "認証に成功しました" };
   } catch (err: unknown) {
     return handleErrors("others", err);
   }
+
+  // redirect to dashboard
+  redirect("/dashboard");
 }

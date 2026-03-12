@@ -24,12 +24,16 @@ export async function decrypt(session: string | undefined = "") {
     });
     return payload;
   } catch (err) {
-    throw new Error(`Verification failed. ${err}`);
+    console.error("Varification failed", err);
+    return;
   }
 }
 
 export async function createSession(userId: string) {
-  const session = await encrypt({ userId: String(userId), expiresAt });
+  const session = await encrypt({
+    userId: String(userId),
+    expiresAt,
+  });
   const cookieStore = await cookies();
 
   cookieStore.set("session", session, {

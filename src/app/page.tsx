@@ -23,12 +23,6 @@ export default function Home() {
       {state?.error && <PMessage type="error" message={state.error.message} />}
       {state?.message && <PMessage type="success" message={state.message} />}
       <LoginAddForm type="login" action={action} />
-      <Link
-        href="/add"
-        className="absolute right-2 bottom-2 border rounded-full px-1 text-sm"
-      >
-        管
-      </Link>
     </div>
   );
 }

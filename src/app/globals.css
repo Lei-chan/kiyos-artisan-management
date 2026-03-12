@@ -25,12 +25,16 @@
 
   a {
     color: inherit;
-    text-decoration: none;
+    cursor: pointer;
   }
 
   input {
     background-color: #ffffff;
     border: thin solid rgb(185, 185, 185);
     border-radius: 5px;
+  }
+
+  button {
+    cursor: pointer;
   }
 }
