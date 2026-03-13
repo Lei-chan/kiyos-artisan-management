@@ -1,5 +1,6 @@
 import * as z from "zod";
 import { MyError } from "./definitions";
+import { resolve } from "path";
 
 const isMyError = (err: unknown): err is MyError => err instanceof Error;
 
@@ -37,3 +38,6 @@ export const handleErrors = (
     error: { message: "Unexpected Error", status: 500 },
   };
 };
+
+export const wait = (seconds: number = 3) =>
+  new Promise((resolve) => setTimeout(resolve, seconds * 1000));

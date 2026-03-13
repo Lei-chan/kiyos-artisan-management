@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { logout } from "../lib/dal";
 
 export default function Dashboard() {
   const linkClassName =
@@ -17,6 +18,13 @@ export default function Dashboard() {
           管理者の追加
         </Link>
       </div>
+      <button
+        type="button"
+        className="absolute bottom-3 right-3 bg-green-400 rounded text-white px-1 shadow shadow-black/20 transition-all  duration-150 hover:-translate-y-0.5 hover:bg-yellow-400"
+        onClick={logout}
+      >
+        ログアウト
+      </button>
     </div>
   );
 }

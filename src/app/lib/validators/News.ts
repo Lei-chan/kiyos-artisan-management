@@ -10,7 +10,10 @@ const News = z.object({
   type: z.string(),
   content: z.object({
     title: StringForLanguage,
-    sentence: StringForLanguage,
+    sentence: z.object({
+      en: z.array(z.string().trim()),
+      ja: z.array(z.string().trim()),
+    }),
     link: { href: z.string().trim(), name: StringForLanguage },
   }),
   lastModifiedUserId: z.string(),

@@ -1,22 +1,23 @@
 import * as z from "zod";
 
-const StringForLanguage = z.object({
-  en: z.string().trim(),
-  ja: z.string().trim(),
-});
-
 const History = z.object({
-  year: z.string(),
-  month: z.string(),
+  year: z.number(),
+  month: z.number().gt(1).lt(12),
   contents: z.array(
     z.object({
       images: z.array(
         z.object({
           buffer: z.instanceof(Buffer),
-          name: StringForLanguage,
+          name: z.object({
+            en: z.string().trim(),
+            ja: z.string().trim(),
+          }),
         }),
       ),
-      sentence: StringForLanguage,
+      sentence: z.object({
+        en: z.array(z.string().trim()),
+        ja: z.array(z.string().trim()),
+      }),
     }),
   ),
   lastModifiedUserId: z.string(),

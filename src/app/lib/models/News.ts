@@ -6,7 +6,7 @@ const NewsSchema = new mongoose.Schema(
     type: String,
     content: {
       title: { en: String, ja: String },
-      sentence: { en: String, ja: String },
+      sentence: { en: [String], ja: [String] },
       link: { href: String, name: { en: String, ja: String } },
     },
     lastModifiedUserId: String,

@@ -13,3 +13,36 @@ export type SessionPayload = {
   userId: string;
   expiresAt: Date;
 };
+
+export type HistoryData = {
+  _id?: string;
+  year: number;
+  month: number;
+  contents: HistoryContent[];
+  lastModifiedUserId: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
+export type HistoryContent = {
+  images: ImageData[];
+  sentence: SentenceData;
+};
+
+export type SentenceData = { en: string[]; ja: string[] };
+
+export type ImageData = { buffer: Buffer; name: string };
+
+// export type ImageData = { buffer: Buffer; name: { en: string; ja: string } };
+
+export type Group = "kiyos" | "amavin";
+
+export type RegisterHistoryData = {
+  type: Group;
+  data: { formData: FormData; year: number; month: number };
+};
+
+export type DisplayMessageData = {
+  type: "error" | "pending" | "success";
+  message: string;
+};
