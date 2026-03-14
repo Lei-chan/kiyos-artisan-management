@@ -3,6 +3,7 @@ import React, {
   startTransition,
   useActionState,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { nanoid } from "nanoid";
@@ -10,7 +11,6 @@ import PMessage from "../Components/PMessage";
 import {
   DisplayMessageData,
   FormState,
-  Group,
   HistoryContent,
   HistoryData,
   ImageData,
@@ -18,8 +18,8 @@ import {
   SentenceData,
 } from "../lib/definitions";
 import { getHistoryForDate } from "../lib/dal";
-import { registerHistory } from "../actions/registerHistory";
-import { wait } from "../lib/helper";
+import { createUpdateHistory } from "../actions/registerHistory";
+import { getContentsFromFormData, wait } from "../lib/helper";
 import Image from "next/image";
 
 export default function RegisterHistory() {
@@ -32,6 +32,7 @@ export default function RegisterHistory() {
   );
 }
 
+// fix the issue that already exsisted images are not reflected when update history
 function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
@@ -40,11 +41,14 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
   const [messageData, setMessageData] = useState<
     DisplayMessageData | undefined
   >();
+  // // use refreshKey to updateUI
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const [state, action, isPending] = useActionState<
     FormState,
     RegisterHistoryData
-  >(registerHistory, undefined);
+  >(createUpdateHistory, undefined);
+  const lastModifiedState = useRef<FormState>(null);
 
   function handleChangeYear(type: "forward" | "back") {
     setYear((prev) => (type === "forward" ? prev + 1 : prev - 1));
@@ -64,14 +68,37 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
     setContentKey((prev) => prev.toSpliced(index, 1));
   }
 
-  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
-    e.preventDefault();
+  function increaseRefreshKey() {
+    setRefreshKey((prev) => prev + 1);
+  }
 
-    const formData = new FormData(e.currentTarget);
+  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+    try {
+      e.preventDefault();
 
-    startTransition(() =>
-      action({ type, data: { formData: formData, year, month } }),
-    );
+      const formData = new FormData(e.currentTarget);
+
+      const contents = await getContentsFromFormData(formData);
+
+      startTransition(() =>
+        // action({ type, data: { formData: formData, year, month } }),
+        action({
+          type,
+          data: {
+            _id: historyData ? historyData._id : "",
+            contents,
+            year,
+            month,
+          },
+        }),
+      );
+    } catch (err) {
+      console.error("Error", err);
+      setMessageData({
+        type: "error",
+        message: "データの送信に失敗しました。後ほどもう一度お試し下さい🙇‍♂️",
+      });
+    }
   }
 
   // fetch exsisting history for the date
@@ -86,8 +113,8 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
         return;
       }
 
-      // if no data => do nothing
-      if (Object.keys(data).length === 0) return;
+      // if no data => set undefined
+      if (Object.keys(data).length === 0) return setHistoryData(undefined);
 
       setHistoryData(data);
       setContentKey(
@@ -98,7 +125,9 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
     };
 
     fetchHistoryData();
-  }, [type, year, month]);
+  }, [type, year, month, refreshKey]);
+
+  console.log(historyData);
 
   useEffect(() => {
     if (!state?.message) return;
@@ -109,10 +138,12 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
       setMessageData({ type: "success", message: state.message });
       await wait();
       setMessageData(undefined);
+
+      increaseRefreshKey();
     };
 
     displaySuccessMessage();
-  }, [state?.message]);
+  }, [state]);
 
   return (
     <form
@@ -207,7 +238,8 @@ function Content({
   content: HistoryContent | undefined;
   onClickDelete: () => void;
 }) {
-  const [imageKey, setImageKey] = useState([{ id: nanoid() }]);
+  const [imageKey, setImageKey] = useState<{ id: string }[]>([]);
+  const [images, setImages] = useState(content?.images || []);
 
   function handleClickAddImage() {
     setImageKey((prev) => [...prev, { id: nanoid() }]);
@@ -215,18 +247,23 @@ function Content({
 
   function handleClickDeleteImage(i: number) {
     setImageKey((prev) => prev.toSpliced(i, 1));
+
+    // if there're content images, remove the deleted one
+    if (images.length) setImages((prev) => prev.toSpliced(i, 1));
   }
 
   useEffect(() => {
-    if (!content) return;
-
-    const assignImageKey = () =>
+    const assignImageKeyAndImages = () => {
       setImageKey(
-        content.images.map((_) => {
-          return { id: nanoid() };
-        }),
+        content
+          ? content.images.map((_) => {
+              return { id: nanoid() };
+            })
+          : [{ id: nanoid() }],
       );
-    assignImageKey();
+      setImages(content?.images || []);
+    };
+    assignImageKeyAndImages();
   }, [content]);
 
   return (
@@ -244,7 +281,7 @@ function Content({
           key={data.id}
           i={i}
           contentIndex={index}
-          image={content?.images[i]}
+          image={images[i]}
           onClickDelete={() => handleClickDeleteImage(i)}
         />
       ))}
@@ -255,8 +292,8 @@ function Content({
       >
         + 画像を追加
       </button>
-      <Sentence type="ja" sentence={content?.sentence} />
-      <Sentence type="en" sentence={content?.sentence} />
+      <Sentence type="ja" index={index} sentence={content?.sentence} />
+      <Sentence type="en" index={index} sentence={content?.sentence} />
     </div>
   );
 }
@@ -281,19 +318,6 @@ function ImageSelect({
     return URL.createObjectURL(blob);
   };
 
-  // const [imageNameJa, setImageNameJa] = useState(image?.name.ja || "");
-  // const [imageNameEn, setImageNameEn] = useState(image?.name.en || "");
-
-  // function handleChangeName(
-  //   e: React.ChangeEvent<HTMLInputElement>,
-  //   type: "ja" | "en",
-  // ) {
-  //   const value = e.currentTarget.value;
-
-  //   if (type === "ja") setImageNameJa(value);
-
-  //   if (type === "en") setImageNameEn(value);
-  // }
   function handleChangeImage(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.currentTarget.files;
     if (!files) return;
@@ -303,10 +327,8 @@ function ImageSelect({
   }
 
   useEffect(() => {
-    if (!image) return;
-
     const displayImage = () => {
-      setCurImageUrl(convertBufferToUrl(image.buffer));
+      setCurImageUrl(image ? convertBufferToUrl(image.buffer) : "");
     };
     displayImage();
   }, [image]);
@@ -363,9 +385,11 @@ function ImageSelect({
 
 function Sentence({
   type,
+  index,
   sentence,
 }: {
   type: "ja" | "en";
+  index: number;
   sentence: SentenceData | undefined;
 }) {
   const [curSentence, setCurSentence] = useState("");
@@ -375,17 +399,18 @@ function Sentence({
   }
 
   useEffect(() => {
-    if (!sentence) return;
-
-    const assignSentence = () => setCurSentence(sentence[type].join("/n"));
+    const assignSentence = () =>
+      setCurSentence(sentence ? sentence[type].join("/n") : "");
     assignSentence();
   }, [sentence, type]);
 
   return (
     <div className="w-full">
-      <p className="text-sm">内容文（{type === "ja" ? "日本語" : "英語"}）</p>
+      <p className="text-sm">
+        内容文 {index + 1}（{type === "ja" ? "日本語" : "英語"}）
+      </p>
       <textarea
-        name={`sentence${type === "ja" ? "Ja" : "En"}`}
+        name={`sentence${type === "ja" ? "Ja" : "En"}${index + 1}`}
         placeholder={`${type === "ja" ? "日本語" : "英語"}の内容文`}
         value={curSentence}
         className="w-[80%] aspect-3/2 mt-1 p-1"

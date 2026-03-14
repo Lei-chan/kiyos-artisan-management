@@ -25,7 +25,7 @@ export type HistoryData = {
 };
 
 export type HistoryContent = {
-  images: ImageData[];
+  images: ImageData[] | [];
   sentence: SentenceData;
 };
 
@@ -33,13 +33,23 @@ export type SentenceData = { en: string[]; ja: string[] };
 
 export type ImageData = { buffer: Buffer; name: string };
 
-// export type ImageData = { buffer: Buffer; name: { en: string; ja: string } };
-
 export type Group = "kiyos" | "amavin";
+
+export type RegisterHistoryImage = { arrayBuffer: ArrayBuffer; name: string };
+
+export type RegisterHistoryContent = {
+  images: RegisterHistoryImage[];
+  sentence: SentenceData;
+};
 
 export type RegisterHistoryData = {
   type: Group;
-  data: { formData: FormData; year: number; month: number };
+  data: {
+    _id?: string;
+    contents: RegisterHistoryContent[];
+    year: number;
+    month: number;
+  };
 };
 
 export type DisplayMessageData = {

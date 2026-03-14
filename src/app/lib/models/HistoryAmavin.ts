@@ -6,7 +6,7 @@ const HistoryAmavinSchema = new mongoose.Schema(
     month: Number,
     contents: [
       {
-        images: [{ buffer: Buffer, name: { en: String, ja: String } }],
+        images: [{ buffer: Buffer, name: String }],
         sentence: { en: [String], ja: [String] },
       },
     ],

@@ -27,7 +27,7 @@ export const getHistoryForDate = cache(
       if (type === "amavin")
         data = await HistoryAmavin.findOne({ year, month });
 
-      console.log("data", data);
+      // console.log("data", data);
 
       return !data ? {} : JSON.parse(JSON.stringify(data));
     } catch (err: unknown) {

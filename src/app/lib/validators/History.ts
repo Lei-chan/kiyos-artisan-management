@@ -2,16 +2,13 @@ import * as z from "zod";
 
 const History = z.object({
   year: z.number(),
-  month: z.number().gt(1).lt(12),
+  month: z.number().gte(1).lte(12),
   contents: z.array(
     z.object({
       images: z.array(
         z.object({
           buffer: z.instanceof(Buffer),
-          name: z.object({
-            en: z.string().trim(),
-            ja: z.string().trim(),
-          }),
+          name: z.string().trim(),
         }),
       ),
       sentence: z.object({
