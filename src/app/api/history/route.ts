@@ -13,6 +13,6 @@ export async function GET() {
   const data = { historyKiyos, historyAmavin };
 
   return NextResponse.json(data, {
-    headers: { "Access-Control-Allow-Origin": CLIENT_URL },
+    headers: { "Access-Control-Allow-Origin": "*" },
   });
 }
