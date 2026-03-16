@@ -40,20 +40,25 @@ const convertHistoryDataWithBase64 = (data: HistoryData[]) =>
   });
 
 export async function GET() {
-  await dbConnect();
+  try {
+    await dbConnect();
 
-  const historyKiyos = await HistoryKiyos.find().lean();
-  const historyAmavin = await HistoryAmavin.find();
+    const historyKiyos = await HistoryKiyos.find().lean();
+    const historyAmavin = await HistoryAmavin.find().lean();
 
-  const historyKiyosWithBase64 = convertHistoryDataWithBase64(historyKiyos);
-  const historyAmavinWithBase64 = convertHistoryDataWithBase64(historyAmavin);
+    const historyKiyosWithBase64 = convertHistoryDataWithBase64(historyKiyos);
+    const historyAmavinWithBase64 = convertHistoryDataWithBase64(historyAmavin);
 
-  const data = {
-    historyKiyos: historyKiyosWithBase64,
-    historyAmavin: historyAmavinWithBase64,
-  };
+    const data = {
+      historyKiyos: historyKiyosWithBase64,
+      historyAmavin: historyAmavinWithBase64,
+    };
 
-  return NextResponse.json(data, {
-    headers: { "Access-Control-Allow-Origin": "*" },
-  });
+    return NextResponse.json(data, {
+      headers: { "Access-Control-Allow-Origin": "*" },
+    });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: err }, { status: 500 });
+  }
 }
