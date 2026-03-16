@@ -11,7 +11,7 @@ const verifyKey = (key: string) => {
   const verified = key === process.env.SECRET_KEY;
 
   if (!verified) {
-    const err = new Error("Unauthorized") as MyError;
+    const err = new Error("権限がありません") as MyError;
     err.status = 401;
     throw err;
   }

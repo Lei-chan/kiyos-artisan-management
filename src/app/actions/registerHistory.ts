@@ -85,7 +85,6 @@ export async function createUpdateHistory(
       contents: contentsWithBufferImages,
       lastModifiedUserId: userId,
     };
-    console.log(dataToSendServer);
 
     const result = History.safeParse(dataToSendServer);
     if (!result.success)

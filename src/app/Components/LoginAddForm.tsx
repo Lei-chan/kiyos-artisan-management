@@ -25,7 +25,7 @@ export default function LoginAddForm({
   return (
     <form
       action={action}
-      className={`w-[90%] h-fit shadow-lg shadow-black/20 rounded-lg py-6 flex flex-col gap-4 items-center ${type === "login" ? "bg-amber-300" : "bg-orange-300"}`}
+      className={`w-[18rem] h-fit shadow-lg shadow-black/20 rounded-lg py-6 flex flex-col gap-4 items-center ${type === "add" ? "sm:w-[20rem] md:w-[22rem]" : "sm:w-[320px]"} ${type === "login" ? "bg-amber-300" : "bg-orange-300"}`}
     >
       <h3 className="text-lg">
         {type === "login" ? "ログイン" : "管理者追加"}

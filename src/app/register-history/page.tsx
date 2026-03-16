@@ -19,12 +19,16 @@ import {
 } from "../lib/definitions";
 import { getHistoryForDate } from "../lib/dal";
 import { createUpdateHistory } from "../actions/registerHistory";
-import { getContentsFromFormData, wait } from "../lib/helper";
+import {
+  convertDatabaseImagesToFiles,
+  getContentsFromData,
+  wait,
+} from "../lib/helper";
 import Image from "next/image";
 
 export default function RegisterHistory() {
   return (
-    <div className="w-screen min-h-screen flex flex-col items-center text-center pt-3 pb-7 gap-5">
+    <div className="w-full min-h-screen flex flex-col items-center text-center pt-3 sm:pt-4 md:pt-5 lg:pt-6 xl:pt-7 2xl:pt-8 pb-7 gap-5">
       <h1 className="text-xl text-amber-700">Historyの追加・編集ページ</h1>
       <RegisterForm type="kiyos" />
       <RegisterForm type="amavin" />
@@ -37,6 +41,7 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [historyData, setHistoryData] = useState<HistoryData>();
+  const [images, setImages] = useState<(File | undefined)[][]>([[]]);
   const [contentKey, setContentKey] = useState([{ id: nanoid() }]);
   const [messageData, setMessageData] = useState<
     DisplayMessageData | undefined
@@ -62,10 +67,46 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
 
   function handleClickAddContent() {
     setContentKey((prev) => [...prev, { id: nanoid() }]);
+    setImages((prev) => [...prev, []]);
   }
 
   function handleClickDeleteContent(index: number) {
     setContentKey((prev) => prev.toSpliced(index, 1));
+    setImages((prev) => prev.toSpliced(index, 1));
+  }
+
+  function handleAddImage(contentIndex: number) {
+    setImages((prev) => {
+      const newImages = [...prev];
+      newImages[contentIndex] = [...newImages[contentIndex], undefined];
+      return newImages;
+    });
+  }
+
+  function handleDeleteImage(contentIndex: number, imageIndex: number) {
+    setImages((prev) => {
+      const newImages = [...prev];
+      newImages[contentIndex] = newImages[contentIndex].toSpliced(
+        imageIndex,
+        1,
+      );
+      return newImages;
+    });
+  }
+
+  function handleChangeImage(
+    contentIndex: number,
+    imageIndex: number,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const files = e.currentTarget.files;
+    if (!files) return;
+
+    setImages((prev) => {
+      const newImages = [...prev];
+      newImages[contentIndex][imageIndex] = files[0];
+      return newImages;
+    });
   }
 
   function increaseRefreshKey() {
@@ -78,7 +119,7 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
 
       const formData = new FormData(e.currentTarget);
 
-      const contents = await getContentsFromFormData(formData);
+      const contents = await getContentsFromData(formData, images);
 
       startTransition(() =>
         // action({ type, data: { formData: formData, year, month } }),
@@ -114,7 +155,12 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
       }
 
       // if no data => set undefined
-      if (Object.keys(data).length === 0) return setHistoryData(undefined);
+      if (Object.keys(data).length === 0) {
+        setHistoryData(undefined);
+        setContentKey([{ id: nanoid() }]);
+        setImages([[]]);
+        return;
+      }
 
       setHistoryData(data);
       setContentKey(
@@ -122,12 +168,20 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
           return { id: nanoid() };
         }),
       );
-    };
 
+      // set images converting database image data {name: string; buffer: Buffer} to File
+      const contentsImages = data.contents.map(
+        (con: HistoryContent) => con.images,
+      );
+      const contentsImagesToDisplay = contentsImages.map((imgs: ImageData[]) =>
+        convertDatabaseImagesToFiles(imgs),
+      );
+      setImages(data.contents.map((con: HistoryContent) => con.images));
+
+      setImages(contentsImagesToDisplay);
+    };
     fetchHistoryData();
   }, [type, year, month, refreshKey]);
-
-  console.log(historyData);
 
   useEffect(() => {
     if (!state?.message) return;
@@ -147,7 +201,7 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
 
   return (
     <form
-      className={`w-[90%] h-fit bg-blue-900/20 rounded shadow-md shadow-black/20 flex flex-col items-center gap-2 pt-3 pb-5 ${type === "amavin" ? "mt-5" : ""}`}
+      className={`w-[18rem] sm:w-[20rem] md:w-[24rem] lg:w-[26rem] xl:w-[30rem] 2xl:w-[34rem] h-fit bg-blue-900/20 rounded shadow-md shadow-black/20 flex flex-col items-center gap-2 pt-3 pb-5 ${type === "amavin" ? "mt-5" : ""}`}
       onSubmit={handleSubmit}
     >
       {messageData && (
@@ -175,7 +229,11 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
           key={data.id}
           index={i}
           content={historyData?.contents[i]}
+          images={images[i]}
           onClickDelete={() => handleClickDeleteContent(i)}
+          onClickAddImage={handleAddImage}
+          onClickDeleteImage={handleDeleteImage}
+          onChangeImage={handleChangeImage}
         />
       ))}
       <button
@@ -232,39 +290,51 @@ function DateSelect({
 function Content({
   index,
   content,
+  images,
   onClickDelete,
+  onClickAddImage,
+  onClickDeleteImage,
+  onChangeImage,
 }: {
   index: number;
   content: HistoryContent | undefined;
+  images: (File | undefined)[];
   onClickDelete: () => void;
+  onClickAddImage: (contentIndex: number) => void;
+  onClickDeleteImage: (contentIndex: number, imageIndex: number) => void;
+  onChangeImage: (
+    contentIndex: number,
+    imageIndex: number,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => void;
 }) {
-  const [imageKey, setImageKey] = useState<{ id: string }[]>([]);
-  const [images, setImages] = useState(content?.images || []);
+  // const [imageKey, setImageKey] = useState<{ id: string }[]>([]);
+  // const [images, setImages] = useState(content?.images || []);
 
-  function handleClickAddImage() {
-    setImageKey((prev) => [...prev, { id: nanoid() }]);
-  }
+  // function handleClickAddImage() {
+  //   setImageKey((prev) => [...prev, { id: nanoid() }]);
+  // }
 
-  function handleClickDeleteImage(i: number) {
-    setImageKey((prev) => prev.toSpliced(i, 1));
+  // function handleClickDeleteImage(i: number) {
+  //   setImageKey((prev) => prev.toSpliced(i, 1));
 
-    // if there're content images, remove the deleted one
-    if (images.length) setImages((prev) => prev.toSpliced(i, 1));
-  }
+  //   // if there're content images, remove the deleted one
+  //   if (images.length) setImages((prev) => prev.toSpliced(i, 1));
+  // }
 
-  useEffect(() => {
-    const assignImageKeyAndImages = () => {
-      setImageKey(
-        content
-          ? content.images.map((_) => {
-              return { id: nanoid() };
-            })
-          : [{ id: nanoid() }],
-      );
-      setImages(content?.images || []);
-    };
-    assignImageKeyAndImages();
-  }, [content]);
+  // useEffect(() => {
+  //   const assignImageKeyAndImages = () => {
+  //     setImageKey(
+  //       content
+  //         ? content.images.map((_) => {
+  //             return { id: nanoid() };
+  //           })
+  //         : [{ id: nanoid() }],
+  //     );
+  //     setImages(content?.images || []);
+  //   };
+  //   assignImageKeyAndImages();
+  // }, [content]);
 
   return (
     <div className="relative w-[90%] h-fit mt-2 flex flex-col gap-2 items-center">
@@ -276,7 +346,7 @@ function Content({
         ×
       </button>
       <h3>🍇出来事 {index + 1}</h3>
-      {imageKey.map((data, i) => (
+      {/* {imageKey.map((data, i) => (
         <ImageSelect
           key={data.id}
           i={i}
@@ -284,11 +354,21 @@ function Content({
           image={images[i]}
           onClickDelete={() => handleClickDeleteImage(i)}
         />
+      ))} */}
+      {images.map((data, i) => (
+        <ImageSelect
+          key={i}
+          i={i}
+          contentIndex={index}
+          image={data}
+          onClickDelete={onClickDeleteImage}
+          onChangeImage={onChangeImage}
+        />
       ))}
       <button
         type="button"
         className="w-fit bg-orange-400 text-white px-1 text-[13px] rounded mb-3"
-        onClick={handleClickAddImage}
+        onClick={() => onClickAddImage(index)}
       >
         + 画像を追加
       </button>
@@ -303,20 +383,21 @@ function ImageSelect({
   contentIndex,
   image,
   onClickDelete,
+  onChangeImage,
 }: {
   i: number;
   contentIndex: number;
-  image: ImageData | undefined;
-  onClickDelete: () => void;
+  // image: ImageData | undefined;
+  image: File | undefined;
+  onClickDelete: (contentIndex: number, imageIndex: number) => void;
+  onChangeImage: (
+    contentIndex: number,
+    imageIndex: number,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => void;
 }) {
   const inputClassName = "w-[70%] px-1 mt-1";
   const [curImageUrl, setCurImageUrl] = useState("");
-
-  const convertBufferToUrl = (buffer: Buffer) => {
-    const nodeJsBuffer = Buffer.from(buffer);
-    const blob = new Blob([nodeJsBuffer]);
-    return URL.createObjectURL(blob);
-  };
 
   function handleChangeImage(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.currentTarget.files;
@@ -328,7 +409,8 @@ function ImageSelect({
 
   useEffect(() => {
     const displayImage = () => {
-      setCurImageUrl(image ? convertBufferToUrl(image.buffer) : "");
+      setCurImageUrl(image ? URL.createObjectURL(image) : "");
+      // setCurImageUrl(image ? convertBufferToUrl(image.buffer) : "");
     };
     displayImage();
   }, [image]);
@@ -352,7 +434,8 @@ function ImageSelect({
             type="file"
             accept="image/*"
             className={inputClassName}
-            onChange={handleChangeImage}
+            // onChange={handleChangeImage}
+            onChange={(e) => onChangeImage(contentIndex, i, e)}
           ></input>
         ) : (
           <p className={inputClassName}>{image.name}</p>
@@ -376,7 +459,8 @@ function ImageSelect({
         <button
           type="button"
           className="absolute w-4.5 aspect-square bg-[url('/trash.svg')] bg-center bg-no-repeat bg-contain right-[5%]"
-          onClick={onClickDelete}
+          // onClick={onClickDelete}
+          onClick={() => onClickDelete(contentIndex, i)}
         ></button>
       </div>
     </div>

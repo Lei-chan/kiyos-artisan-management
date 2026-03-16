@@ -13,7 +13,7 @@ export default function Home() {
   );
 
   return (
-    <div className="w-screen h-screen text-center py-2 flex flex-col items-center justify-center gap-3">
+    <div className="w-screen h-screen text-center py-2 flex flex-col items-center justify-center gap-3 sm:gap-4 md:gap-5">
       <h1 className="text-2xl">
         Kiyos Celler ＆ Artisan Mariage Vineyards
         <br />
