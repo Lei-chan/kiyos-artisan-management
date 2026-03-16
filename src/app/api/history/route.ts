@@ -1,3 +1,4 @@
+import { CLIENT_URL } from "@/app/lib/config";
 import dbConnect from "@/app/lib/database";
 import HistoryAmavin from "@/app/lib/models/HistoryAmavin";
 import HistoryKiyos from "@/app/lib/models/HistoryKiyos";
@@ -11,5 +12,7 @@ export async function GET() {
 
   const data = { historyKiyos, historyAmavin };
 
-  return NextResponse.json(data);
+  return NextResponse.json(data, {
+    headers: { "Access-Control-Allow-Origin": CLIENT_URL },
+  });
 }
