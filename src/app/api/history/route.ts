@@ -1,15 +1,9 @@
 import { CLIENT_URL } from "@/app/lib/config";
 import dbConnect from "@/app/lib/database";
-import {
-  HistoryContent,
-  HistoryData,
-  ImageData,
-  RegisterHistoryContent,
-  RegisterHistoryImage,
-} from "@/app/lib/definitions";
+import { HistoryContent, HistoryData } from "@/app/lib/definitions";
 import HistoryAmavin from "@/app/lib/models/HistoryAmavin";
 import HistoryKiyos from "@/app/lib/models/HistoryKiyos";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 // const corsHeaders = {
 //   "Access-Control-Allow-Origin": CLIENT_URL,
@@ -39,26 +33,37 @@ const convertHistoryDataWithBase64 = (data: HistoryData[]) =>
     };
   });
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const searchParams = req.nextUrl.searchParams;
+    const type = searchParams.get("type");
+    const year = searchParams.get("year");
+
+    if (!type || !year) throw new Error("type and year are required");
+
     await dbConnect();
 
-    const historyKiyos = await HistoryKiyos.find().lean();
-    const historyAmavin = await HistoryAmavin.find().lean();
+    const option = { year: parseInt(year) };
 
-    const historyKiyosWithBase64 = convertHistoryDataWithBase64(historyKiyos);
-    const historyAmavinWithBase64 = convertHistoryDataWithBase64(historyAmavin);
+    const historyData =
+      type === "kiyos"
+        ? await HistoryKiyos.find(option).lean().exec()
+        : await HistoryAmavin.find(option).lean().exec();
+
+    const historyDataWithBase64 = convertHistoryDataWithBase64(historyData);
 
     const data = {
-      historyKiyos: historyKiyosWithBase64,
-      historyAmavin: historyAmavinWithBase64,
+      history: historyDataWithBase64,
     };
 
     return NextResponse.json(data, {
       headers: { "Access-Control-Allow-Origin": "*" },
     });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error(err);
-    return NextResponse.json({ error: err }, { status: 500 });
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : err },
+      { status: 500 },
+    );
   }
 }
