@@ -28,7 +28,7 @@ const convertHistoryDataWithBase64 = (data: HistoryData[]) =>
           images: con.images.map((img) => {
             return {
               name: img.name,
-              data: Buffer.from(img.buffer).toString("base64"),
+              data: img.buffer.toString("base64"),
             };
           }),
         };
