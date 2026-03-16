@@ -48,9 +48,12 @@ export async function GET() {
   const historyKiyosWithBase64 = convertHistoryDataWithBase64(historyKiyos);
   const historyAmavinWithBase64 = convertHistoryDataWithBase64(historyAmavin);
 
-  const data = { historyKiyosWithBase64, historyAmavinWithBase64 };
+  const data = {
+    historyKiyos: historyKiyosWithBase64,
+    historyAmavin: historyAmavinWithBase64,
+  };
 
   return NextResponse.json(data, {
-    headers: { "Access-Control-Allow-Origin": CLIENT_URL },
+    headers: { "Access-Control-Allow-Origin": "*" },
   });
 }
