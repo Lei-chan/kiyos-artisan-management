@@ -1,6 +1,6 @@
 "use server";
 import { verifySession } from "../lib/dal";
-import { FormState, RegisterHistoryData } from "../lib/definitions";
+import { FormState, Group, RegisterHistoryData } from "../lib/definitions";
 import { convertContentsToSendDatabase, handleErrors } from "../lib/helper";
 import History from "../lib/validators/History";
 import dbConnect from "../lib/database";
@@ -122,3 +122,17 @@ export async function createUpdateHistory(
 //     return handleErrors("others", err);
 //   }
 // }
+
+export async function deleteHistory(type: Group, id: string) {
+  try {
+    await dbConnect();
+
+    type === "kiyos"
+      ? await HistoryKiyos.findByIdAndDelete(id)
+      : await HistoryAmavin.findByIdAndDelete(id);
+
+    return "History deleted successfully!";
+  } catch (err) {
+    console.error("Error", err);
+  }
+}

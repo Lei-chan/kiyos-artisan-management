@@ -18,7 +18,7 @@ import {
   SentenceData,
 } from "../lib/definitions";
 import { getHistoryForDate } from "../lib/dal";
-import { createUpdateHistory } from "../actions/registerHistory";
+import { createUpdateHistory, deleteHistory } from "../actions/registerHistory";
 import {
   convertDatabaseImagesToFiles,
   getContentsFromData,
@@ -181,6 +181,10 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
       setImages(contentsImagesToDisplay);
     };
     fetchHistoryData();
+
+    // To delete history
+    // (async () =>
+    //   console.log(await deleteHistory("amavin", "69b5380675128ecb783da895")))();
   }, [type, year, month, refreshKey]);
 
   useEffect(() => {
