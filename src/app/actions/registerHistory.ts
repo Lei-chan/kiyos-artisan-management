@@ -104,24 +104,11 @@ export async function createUpdateHistory(
         ? await HistoryKiyos.findByIdAndUpdate(_id, dataToSendServer)
         : await HistoryAmavin.findByIdAndUpdate(_id, dataToSendServer);
 
-    // // console.log(history);
-
     return { message: "この月のHistoryが登録されました" };
   } catch (err: unknown) {
     return handleErrors("others", err);
   }
 }
-
-// export async function updateHistory(
-//   formState: FormState,
-//   data: RegisterHistoryData,
-// ) {
-//   try {
-//     console.log("updateHistory", data);
-//   } catch (err: unknown) {
-//     return handleErrors("others", err);
-//   }
-// }
 
 export async function deleteHistory(type: Group, id: string) {
   try {
