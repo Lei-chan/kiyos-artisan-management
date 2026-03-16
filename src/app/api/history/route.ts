@@ -4,6 +4,19 @@ import HistoryAmavin from "@/app/lib/models/HistoryAmavin";
 import HistoryKiyos from "@/app/lib/models/HistoryKiyos";
 import { NextResponse } from "next/server";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": CLIENT_URL,
+  "Access-Control-Allow-Methods": "GET,OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+export function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders,
+  });
+}
+
 export async function GET() {
   await dbConnect();
 
@@ -13,6 +26,6 @@ export async function GET() {
   const data = { historyKiyos, historyAmavin };
 
   return NextResponse.json(data, {
-    headers: { "Access-Control-Allow-Origin": "*" },
+    headers: corsHeaders,
   });
 }
