@@ -25,6 +25,7 @@ import {
 import {
   DisplayMessageData,
   FormState,
+  Group,
   HistoryContent,
   HistoryData,
   ImageData,
@@ -36,8 +37,8 @@ import { nanoid } from "nanoid";
 
 export default function RegisterHistory() {
   return (
-    <div className="w-full min-h-screen flex flex-col items-center text-center pt-3 sm:pt-4 md:pt-5 lg:pt-6 xl:pt-7 2xl:pt-8 pb-7 gap-5">
-      <h1 className="text-xl text-amber-700">Historyの追加・編集ページ</h1>
+    <div className="w-full min-h-screen flex flex-col items-center justify-center text-center pt-3 sm:pt-4 md:pt-5 lg:pt-6 xl:pt-7 2xl:pt-8 pb-7 gap-5">
+      <h1 className="text-xl text-amber-700">Historyの登録・編集ページ</h1>
       <RegisterForm type="kiyos" />
       <RegisterForm type="amavin" />
     </div>
@@ -45,9 +46,10 @@ export default function RegisterHistory() {
 }
 
 // fix the issue that already exsisted images are not reflected when update history
-function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
+function RegisterForm({ type }: { type: Group }) {
   const formRef = useRef<HTMLFormElement>(null);
 
+  const [isOpen, setIsOpen] = useState(false);
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [historyData, setHistoryData] = useState<HistoryData>();
@@ -63,6 +65,10 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
     FormState,
     RegisterHistoryData
   >(createUpdateHistory, undefined);
+
+  function handleToggleOpen(e: React.MouseEvent<HTMLButtonElement>) {
+    setIsOpen(!isOpen);
+  }
 
   function scrollToTopForm() {
     const ref = formRef.current;
@@ -226,9 +232,17 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
   return (
     <form
       ref={formRef}
-      className={`w-[18rem] sm:w-[20rem] md:w-[24rem] lg:w-[26rem] xl:w-[30rem] 2xl:w-[34rem] h-fit bg-blue-900/20 rounded shadow-md shadow-black/20 flex flex-col items-center gap-2 pt-3 pb-5 ${type === "amavin" ? "mt-5" : ""}`}
+      className={`relative w-[18rem] sm:w-[20rem] md:w-[24rem] lg:w-[26rem] xl:w-[30rem] 2xl:w-[34rem] h-fit bg-blue-900/20 rounded shadow-md shadow-black/20 flex flex-col items-center gap-2 pt-3 pb-5 ${type === "amavin" ? "mt-5" : ""}`}
       onSubmit={handleSubmit}
     >
+      {isOpen && (
+        <button
+          className="absolute w-5 h-5 right-2 top-2 text-xl bg-yellow-600 hover:bg-yellow-500 transition-all duration-150 rounded-full text-white flex flex-col justify-center"
+          onClick={handleToggleOpen}
+        >
+          ×
+        </button>
+      )}
       {messageData && (
         <PMessage type={messageData.type} message={messageData.message} />
       )}
@@ -237,45 +251,56 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
         <PMessage type="pending" message="この月のHistoryを更新中..." />
       )}
       <h3 className="mb-2 text-purple-800">
-        {type === "kiyos" ? "Kiyos Celler" : "Artisan Mariage Vineyards"}
+        {type === "kiyos" ? "Kiyos Cellar" : "Artisan Mariage Vineyards"}
       </h3>
-      <DateSelect
-        type="year"
-        curYearOrMonth={year}
-        onClickChangeDate={handleChangeYear}
-      />
-      <DateSelect
-        type="month"
-        curYearOrMonth={month}
-        onClickChangeDate={handleChangeMonth}
-      />
-      {contentKey.map((data, i) => (
-        <Content
-          key={data.id}
-          index={i}
-          content={historyData?.contents[i]}
-          images={images[i]}
-          onClickDelete={() => handleClickDeleteContent(i)}
-          onClickAddImage={handleAddImage}
-          onClickDeleteImage={handleDeleteImage}
-          onChangeImage={handleChangeImage}
-        />
-      ))}
-      <button
-        type="button"
-        className="w-fit bg-orange-400 text-white px-1 text-sm rounded transition-all duration-150 hover:-translate-y-px mt-5"
-        onClick={handleClickAddContent}
-      >
-        + 出来事を追加
-      </button>
-      <button
-        type="submit"
-        className="w-fit bg-purple-700 text-white py-1 px-4 rounded-full mt-4 leading-tight transition-all duration-150 hover:bg-purple-500 hover:-translate-y-1"
-      >
-        この月のHistoryを
-        <br />
-        登録する
-      </button>
+      {isOpen ? (
+        <>
+          <DateSelect
+            type="year"
+            curYearOrMonth={year}
+            onClickChangeDate={handleChangeYear}
+          />
+          <DateSelect
+            type="month"
+            curYearOrMonth={month}
+            onClickChangeDate={handleChangeMonth}
+          />
+          {contentKey.map((data, i) => (
+            <Content
+              key={data.id}
+              index={i}
+              content={historyData?.contents[i]}
+              images={images[i]}
+              onClickDelete={() => handleClickDeleteContent(i)}
+              onClickAddImage={handleAddImage}
+              onClickDeleteImage={handleDeleteImage}
+              onChangeImage={handleChangeImage}
+            />
+          ))}
+          <button
+            type="button"
+            className="w-fit bg-orange-400 text-white px-1 text-sm rounded transition-all duration-150 hover:-translate-y-px mt-5"
+            onClick={handleClickAddContent}
+          >
+            + 出来事を追加
+          </button>
+          <button
+            type="submit"
+            className="w-fit bg-purple-700 text-white py-1 px-4 rounded-full mt-4 leading-tight transition-all duration-150 hover:bg-purple-500 hover:-translate-y-1"
+          >
+            この月のHistoryを
+            <br />
+            登録する
+          </button>
+        </>
+      ) : (
+        <button
+          className="bg-yellow-600 hover:bg-yellow-500 transition-all duration-150 rounded text-white px-3"
+          onClick={handleToggleOpen}
+        >
+          登録を開始
+        </button>
+      )}
     </form>
   );
 }

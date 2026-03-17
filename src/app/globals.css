@@ -33,6 +33,7 @@
     background-color: #ffffff;
     border: thin solid rgb(185, 185, 185);
     border-radius: 5px;
+    padding: 0 4px 0 4px;
   }
 
   button {

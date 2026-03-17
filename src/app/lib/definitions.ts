@@ -52,6 +52,17 @@ export type RegisterHistoryData = {
   };
 };
 
+export type NewsData = {
+  date: string;
+  type: Group | "both";
+  content: {
+    title: { en: string; ja: string };
+    sentence: { en: string[]; ja: string[] };
+    link: string;
+  };
+  lastModifiedUserId: string;
+};
+
 export type DisplayMessageData = {
   type: "error" | "pending" | "success";
   message: string;

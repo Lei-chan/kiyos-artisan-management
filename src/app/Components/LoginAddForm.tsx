@@ -1,5 +1,10 @@
 "use client";
 import { useState } from "react";
+import {
+  MIN_EACH_PASSWORD,
+  MIN_PASSWORD_LENGTH,
+  MIN_USERNAME_LENGTH,
+} from "../lib/config";
 
 export default function LoginAddForm({
   type,
@@ -8,6 +13,7 @@ export default function LoginAddForm({
   type: "login" | "add";
   action: (formData: FormData) => void;
 }) {
+  const pClassName = "w-[60%] text-sm text-black/70";
   const inputWrapperClassname = "relative w-[60%] flex flex-row items-center";
   const inputClassname = "px-2";
 
@@ -30,12 +36,23 @@ export default function LoginAddForm({
       <h3 className="text-lg">
         {type === "login" ? "ログイン" : "管理者追加"}
       </h3>
+      {type === "add" && (
+        <p className={pClassName}>
+          {MIN_USERNAME_LENGTH}文字以上で登録してください
+        </p>
+      )}
       <input
         name="username"
         type="text"
         placeholder="ユーザーネーム"
         className={`${inputWrapperClassname} ${inputClassname}`}
       ></input>
+      {type === "add" && (
+        <p className={pClassName}>
+          {MIN_PASSWORD_LENGTH}文字以上、大文字、小文字、数字、記号をそれぞれ
+          {MIN_EACH_PASSWORD}文字以上で登録してください
+        </p>
+      )}
       <div className={inputWrapperClassname}>
         <input
           name="password"

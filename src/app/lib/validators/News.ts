@@ -14,7 +14,7 @@ const News = z.object({
       en: z.array(z.string().trim()),
       ja: z.array(z.string().trim()),
     }),
-    link: { href: z.string().trim(), name: StringForLanguage },
+    link: z.string().trim(),
   }),
   lastModifiedUserId: z.string(),
 });
