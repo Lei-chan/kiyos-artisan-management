@@ -18,10 +18,8 @@ export async function login(formState: FormState, formData: FormData) {
     const manager = await Manager.findOne({ username }).select("password");
     if (!manager) return handleErrors("notFound");
 
-    console.log(manager);
     // compare password
     const isValidPassword = await bcrypt.compare(password, manager.password);
-    console.log(isValidPassword);
 
     if (!isValidPassword) return handleErrors("unauthorized");
 

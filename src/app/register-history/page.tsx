@@ -1,4 +1,5 @@
 "use client";
+// react
 import React, {
   startTransition,
   useActionState,
@@ -6,8 +7,21 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { nanoid } from "nanoid";
+// next.js
+import Image from "next/image";
+// components
 import PMessage from "../Components/PMessage";
+// actions
+import { createUpdateHistory, deleteHistory } from "../actions/registerHistory";
+// dal
+import { getHistoryForDate } from "../lib/dal";
+// methods
+import {
+  convertDatabaseImagesToFiles,
+  getContentsFromData,
+  wait,
+} from "../lib/helper";
+// types
 import {
   DisplayMessageData,
   FormState,
@@ -17,14 +31,8 @@ import {
   RegisterHistoryData,
   SentenceData,
 } from "../lib/definitions";
-import { getHistoryForDate } from "../lib/dal";
-import { createUpdateHistory, deleteHistory } from "../actions/registerHistory";
-import {
-  convertDatabaseImagesToFiles,
-  getContentsFromData,
-  wait,
-} from "../lib/helper";
-import Image from "next/image";
+// library
+import { nanoid } from "nanoid";
 
 export default function RegisterHistory() {
   return (
@@ -38,6 +46,8 @@ export default function RegisterHistory() {
 
 // fix the issue that already exsisted images are not reflected when update history
 function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
+  const formRef = useRef<HTMLFormElement>(null);
+
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [historyData, setHistoryData] = useState<HistoryData>();
@@ -53,7 +63,13 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
     FormState,
     RegisterHistoryData
   >(createUpdateHistory, undefined);
-  const lastModifiedState = useRef<FormState>(null);
+
+  function scrollToTopForm() {
+    const ref = formRef.current;
+    if (!ref) return;
+
+    ref.scrollIntoView({ behavior: "smooth" });
+  }
 
   function handleChangeYear(type: "forward" | "back") {
     setYear((prev) => (type === "forward" ? prev + 1 : prev - 1));
@@ -145,6 +161,8 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
   // fetch exsisting history for the date
   useEffect(() => {
     const fetchHistoryData = async () => {
+      setMessageData({ type: "pending", message: "ロード中..." });
+
       const data = await getHistoryForDate(type, year, month);
       if (!data) {
         setMessageData({
@@ -159,6 +177,7 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
         setHistoryData(undefined);
         setContentKey([{ id: nanoid() }]);
         setImages([[]]);
+        setMessageData(undefined);
         return;
       }
 
@@ -176,9 +195,9 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
       const contentsImagesToDisplay = contentsImages.map((imgs: ImageData[]) =>
         convertDatabaseImagesToFiles(imgs),
       );
-      setImages(data.contents.map((con: HistoryContent) => con.images));
 
       setImages(contentsImagesToDisplay);
+      setMessageData(undefined);
     };
     fetchHistoryData();
 
@@ -193,6 +212,7 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
     const displaySuccessMessage = async () => {
       if (!state.message) return;
 
+      scrollToTopForm();
       setMessageData({ type: "success", message: state.message });
       await wait();
       setMessageData(undefined);
@@ -205,6 +225,7 @@ function RegisterForm({ type }: { type: "kiyos" | "amavin" }) {
 
   return (
     <form
+      ref={formRef}
       className={`w-[18rem] sm:w-[20rem] md:w-[24rem] lg:w-[26rem] xl:w-[30rem] 2xl:w-[34rem] h-fit bg-blue-900/20 rounded shadow-md shadow-black/20 flex flex-col items-center gap-2 pt-3 pb-5 ${type === "amavin" ? "mt-5" : ""}`}
       onSubmit={handleSubmit}
     >

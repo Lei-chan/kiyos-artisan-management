@@ -1,10 +1,12 @@
-import * as z from "zod";
+// types
 import {
   ImageData,
   MyError,
   RegisterHistoryContent,
   RegisterHistoryImage,
 } from "./definitions";
+// libraries
+import * as z from "zod";
 import Resizer from "react-image-file-resizer";
 
 const isMyError = (err: unknown): err is MyError => err instanceof Error;
@@ -112,13 +114,6 @@ export const getContentsFromData = async (
       images.map((imgs) => resizeImage(imgs)),
     );
 
-    // const contentsImages = await Promise.all(
-    //   sentenceJa.map((_, i) => {
-    //     const images = formData.getAll(`image${i + 1}`) as File[];
-    //     return resizeImage(images);
-    //   }),
-    // );
-
     const structuredContents = sentenceJa.map((sentenceName, i) => {
       return {
         // remove undefined from images
@@ -126,8 +121,12 @@ export const getContentsFromData = async (
           (image) => image,
         ) as RegisterHistoryImage[],
         sentence: {
-          ja: String(formData.get(String(sentenceName))).split("\n"),
-          en: String(formData.get(`sentenceEn${i + 1}`)).split("\n"),
+          ja: String(formData.get(String(sentenceName)))
+            .trim()
+            .split("\n"),
+          en: String(formData.get(`sentenceEn${i + 1}`))
+            .trim()
+            .split("\n"),
         },
       };
     });

@@ -1,8 +1,11 @@
 "use server";
 import "server-only";
-import { SessionPayload } from "./definitions";
-import { jwtVerify, SignJWT } from "jose";
+// next.js
 import { cookies } from "next/headers";
+// type
+import { SessionPayload } from "./definitions";
+// library
+import { jwtVerify, SignJWT } from "jose";
 
 const secretKey = process.env.SESSION_SECRET;
 const encodedKey = new TextEncoder().encode(secretKey);

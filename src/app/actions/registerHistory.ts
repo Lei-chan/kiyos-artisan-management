@@ -1,73 +1,16 @@
 "use server";
-import { verifySession } from "../lib/dal";
-import { FormState, Group, RegisterHistoryData } from "../lib/definitions";
-import { convertContentsToSendDatabase, handleErrors } from "../lib/helper";
-import History from "../lib/validators/History";
+// database
 import dbConnect from "../lib/database";
 import HistoryKiyos from "../lib/models/HistoryKiyos";
 import HistoryAmavin from "../lib/models/HistoryAmavin";
-
-// resize image to 500 x 400, convert it to webp, and return as buffer
-// const resizeImage = async (files: File[]) => {
-//   try {
-//     if (!files.length) return;
-
-//     const fileNames = files.map((file) => file.name);
-//     const arrayBuffers = await Promise.all(
-//       files.map((file) => (file.size ? file.arrayBuffer() : undefined)),
-//     );
-
-//     const buffers = await Promise.all(
-//       arrayBuffers.map((buffer) =>
-//         buffer
-//           ? sharp(buffer)
-//               .resize(500, 400, { fit: "inside" })
-//               .toFormat("webp")
-//               .toBuffer()
-//           : undefined,
-//       ),
-//     );
-
-//     return buffers.map((buffer, i) =>
-//       buffer ? { name: fileNames[i], buffer } : undefined,
-//     );
-//   } catch (err) {
-//     throw err;
-//   }
-// };
-
-// const getContentsFromFormData = async (formData: FormData) => {
-//   try {
-//     const flattenedFormDataArr = [...formData].flat();
-//     const sentenceJa = flattenedFormDataArr.filter((data) =>
-//       String(data).includes("sentenceJa"),
-//     );
-
-//     const contentsImages = await Promise.all(
-//       sentenceJa.map((_, i) => {
-//         const images = formData.getAll(`image${i + 1}`) as File[];
-//         return resizeImage(images);
-//       }),
-//     );
-
-//     const structuredContents = await Promise.all(
-//       sentenceJa.map((sentenceName, i) => {
-//         return {
-//           // remove undefined from images
-//           images: contentsImages[i]?.filter((image) => image),
-//           sentence: {
-//             ja: String(formData.get(String(sentenceName))).split("\n"),
-//             en: String(formData.get(`sentenceEn${i + 1}`)).split("\n"),
-//           },
-//         };
-//       }),
-//     );
-
-//     return structuredContents;
-//   } catch (err) {
-//     throw err;
-//   }
-// };
+// validator
+import History from "../lib/validators/History";
+// dal
+import { verifySession } from "../lib/dal";
+// methods
+import { convertContentsToSendDatabase, handleErrors } from "../lib/helper";
+// types
+import { FormState, Group, RegisterHistoryData } from "../lib/definitions";
 
 export async function createUpdateHistory(
   formState: FormState,
