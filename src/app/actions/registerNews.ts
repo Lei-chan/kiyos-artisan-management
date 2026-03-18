@@ -24,15 +24,25 @@ export async function createUpdateNews(formState: FormState, data: NewsData) {
 
     await dbConnect();
 
-    let newData;
+    if (_id) await News.findByIdAndUpdate(_id, result.data);
 
-    if (_id) newData = await News.findByIdAndUpdate(_id, result.data);
-
-    if (!_id) newData = await News.create(result.data);
-
-    console.log(newData);
+    if (!_id) await News.create(result.data);
 
     return { message: "お知らせの登録が完了しました" };
+  } catch (err: unknown) {
+    return handleErrors("others", err);
+  }
+}
+
+export async function deleteNews(formState: FormState, id: string) {
+  await verifySession();
+  try {
+    console.log(id);
+    await dbConnect();
+    const deletedNews = await News.findByIdAndDelete(id);
+    console.log(deletedNews);
+
+    return { message: "お知らせが削除されました" };
   } catch (err: unknown) {
     return handleErrors("others", err);
   }

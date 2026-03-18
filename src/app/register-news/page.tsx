@@ -7,15 +7,16 @@ import {
   useState,
 } from "react";
 import { FormState, Group, NewsData } from "../lib/definitions";
-import { createUpdateNews } from "../actions/registerNews";
+import { createUpdateNews, deleteNews } from "../actions/registerNews";
 import PMessage from "../Components/PMessage";
 import { getNews } from "../lib/dal";
 import { wait } from "../lib/helper";
+import { nanoid } from "nanoid";
 
 export default function RegisterNews() {
   const [news, setNews] = useState<NewsData[]>();
   const [isNewFormOpen, setIsNewFormOpen] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [message, setMessage] = useState("");
   const [refresKey, setRefreshKey] = useState(0);
 
   function handleToggleNewFormOpen() {
@@ -28,14 +29,16 @@ export default function RegisterNews() {
 
   useEffect(() => {
     const assignNewsAndResetPage = async () => {
+      setMessage("ロード中...");
       const newsData = await getNews();
       if (!newsData) {
-        setErrorMessage(
+        setMessage(
           "サーバーエラーが発生しました。後ほどもう一度お試し下さい🙇‍♂️",
         );
         return;
       }
 
+      setMessage("");
       setIsNewFormOpen(false);
       setNews(newsData);
     };
@@ -43,20 +46,19 @@ export default function RegisterNews() {
     assignNewsAndResetPage();
   }, [refresKey]);
 
-  console.log(news);
   return (
     <div className="w-full min-h-screen flex flex-col items-center justify-center text-center pt-3 sm:pt-4 md:pt-5 lg:pt-6 xl:pt-7 2xl:pt-8 pb-7 gap-7">
       <h1 className="text-xl text-amber-700">お知らせの登録・編集ページ</h1>
       <div className="w-[18rem] flex flex-col items-center bg-yellow-100 rounded shadow-md shadow-black/20 py-3 mb-3">
         <h3 className="text-lg text-orange-600">登録済みのお知らせ</h3>
         <div className="w-[90%] my-2">
-          {errorMessage && <p>{errorMessage}</p>}
+          {message && <p>{message}</p>}
           {news && news.length === 0 && <p>登録済みのお知らせはありません</p>}
           {news && news.length > 0 && (
             <ul className="flex flex-col items-center bg-white rounded">
-              {news.map((n, i) => (
+              {news.map((n) => (
                 <Form
-                  key={i}
+                  key={nanoid()}
                   type="exist"
                   news={n}
                   updateUI={handleIncreaseRefreshKey}
@@ -68,7 +70,11 @@ export default function RegisterNews() {
       </div>
       {isNewFormOpen ? (
         <div className="w-[18rem]">
-          <Form type="new" updateUI={handleIncreaseRefreshKey} />
+          <Form
+            type="new"
+            onClickClose={handleToggleNewFormOpen}
+            updateUI={handleIncreaseRefreshKey}
+          />
         </div>
       ) : (
         <button
@@ -87,14 +93,19 @@ export default function RegisterNews() {
 function Form({
   type,
   news,
+  onClickClose,
   updateUI,
 }: {
   type: "exist" | "new";
   news?: NewsData;
+  onClickClose?: () => void;
   updateUI: () => void;
 }) {
   const smallHeaderClassName = "text-amber-700";
   const sectionClassName = "w-[90%] flex flex-col items-center gap-2";
+  const btnClassName =
+    "w-fit transition-all duration-150 hover:-translate-y-0.5 text-white p-1 rounded leading-tight";
+
   const formRef = useRef<HTMLFormElement>(null);
   const [data, setData] = useState<NewsData>({
     date: "",
@@ -114,11 +125,15 @@ function Form({
   const [isOpen, setIsOpen] = useState(type === "exist" ? false : true);
   const [successMessage, setSuccessMessage] = useState("");
 
-  const [state, action, isPending] = useActionState<FormState, NewsData>(
-    createUpdateNews,
-    undefined,
-  );
-  const lastHandledState = useRef<FormState>(null);
+  const [createUpdateState, createUpdateAction, createUpdateIsPending] =
+    useActionState<FormState, NewsData>(createUpdateNews, undefined);
+  const lastHandledCreateUpdateState = useRef<FormState>(null);
+
+  const [deleteState, deleteAction, deleteIsPending] = useActionState<
+    FormState,
+    string
+  >(deleteNews, undefined);
+  const lastHandledDeleteState = useRef<FormState>(null);
 
   function scrollToTopOfForm() {
     const ref = formRef.current;
@@ -197,29 +212,52 @@ function Form({
     });
   }
 
+  function handleDelete() {
+    if (type === "new") return;
+    scrollToTopOfForm();
+    startTransition(() => deleteAction(data._id || ""));
+  }
+
   function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
 
     scrollToTopOfForm();
-    startTransition(() => action(data));
+    startTransition(() => createUpdateAction(data));
   }
 
   useEffect(() => {
-    if (!state?.message) return;
-    if (lastHandledState.current === state) return;
+    if (!createUpdateState?.message) return;
+    if (lastHandledCreateUpdateState.current === createUpdateState) return;
 
-    lastHandledState.current = state;
+    lastHandledCreateUpdateState.current = createUpdateState;
 
     const displayMessageAndUpdateUI = async () => {
-      if (!state?.message) return;
-      setSuccessMessage(state.message);
+      if (!createUpdateState?.message) return;
+      setSuccessMessage(createUpdateState.message);
       await wait();
       setSuccessMessage("");
       updateUI();
     };
 
     displayMessageAndUpdateUI();
-  }, [state, updateUI]);
+  }, [createUpdateState, updateUI]);
+
+  useEffect(() => {
+    if (!deleteState?.message) return;
+    if (lastHandledDeleteState.current === deleteState) return;
+
+    lastHandledDeleteState.current = deleteState;
+
+    const displayMessageAndUpdateUI = async () => {
+      if (!deleteState?.message) return;
+      setSuccessMessage(deleteState.message);
+      await wait();
+      setSuccessMessage("");
+      updateUI();
+    };
+
+    displayMessageAndUpdateUI();
+  }, [deleteState, updateUI]);
 
   return isOpen ? (
     <form
@@ -227,22 +265,36 @@ function Form({
       className={`relative w-full flex flex-col items-center gap-4 py-6 rounded scroll-m-6 ${type === "new" ? "bg-blue-900/20 shadow-md shadow-black/20" : ""}`}
       onSubmit={handleSubmit}
     >
-      {isPending && <PMessage type="pending" message="登録しています..." />}
-      {state?.error && <PMessage type="error" message={state.error.message} />}
-      {successMessage && <PMessage type="success" message={successMessage} />}
-      {type === "exist" && (
-        <button
-          className="absolute w-5 h-5 text-lg rounded-full bg-orange-500 hover:bg-orange-400 text-white flex flex-col justify-center right-1 top-1"
-          onClick={handleToggleOpen}
-        >
-          ×
-        </button>
+      {createUpdateIsPending && (
+        <PMessage type="pending" message="登録しています..." />
       )}
+      {deleteIsPending && (
+        <PMessage type="pending" message="削除しています..." />
+      )}
+      {(createUpdateState?.error || deleteState?.error) && (
+        <PMessage
+          type="error"
+          message={
+            createUpdateState?.error?.message ||
+            deleteState?.error?.message ||
+            ""
+          }
+        />
+      )}
+      {successMessage && <PMessage type="success" message={successMessage} />}
+
+      <button
+        className="absolute w-5 h-5 text-lg rounded-full bg-orange-500 hover:bg-orange-400 text-white flex flex-col justify-center items-center right-1 top-1"
+        onClick={type === "exist" ? handleToggleOpen : onClickClose}
+      >
+        ×
+      </button>
       <label>
         <span className={smallHeaderClassName}>日付 </span>{" "}
         <input
           name="date"
           type="date"
+          placeholder="日付を選択"
           value={data.date}
           onChange={handleChangeDate}
         ></input>
@@ -305,16 +357,29 @@ function Form({
           onChange={handleChangeLink}
         ></input>
       </div>
-      <button
-        type="submit"
-        className="w-fit bg-purple-600 hover:bg-purple-500 transition-all duration-150 hover:-translate-y-0.5 text-white px-1 rounded mt-2"
-      >
-        登録する
-      </button>
+      <div className="flex flex-row mt-2 gap-2">
+        {type === "exist" && (
+          <button
+            type="button"
+            className={`${btnClassName} bg-orange-500 hover:bg-orange-400`}
+            onClick={handleDelete}
+          >
+            このお知らせを
+            <br />
+            削除
+          </button>
+        )}
+        <button
+          type="submit"
+          className={`${btnClassName} bg-purple-600 hover:bg-purple-500`}
+        >
+          登録する
+        </button>
+      </div>
     </form>
   ) : (
     <li
-      className="w-full cursor-pointer p-3 border-b-2 last:border-0 border-black/20"
+      className="w-full cursor-pointer p-3 border-b last:border-0 border-black/20 hover:bg-black/10"
       onClick={handleToggleOpen}
     >
       <p>{news?.date}</p>

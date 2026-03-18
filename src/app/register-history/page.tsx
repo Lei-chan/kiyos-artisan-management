@@ -144,7 +144,6 @@ function RegisterForm({ type }: { type: Group }) {
       const contents = await getContentsFromData(formData, images);
 
       startTransition(() =>
-        // action({ type, data: { formData: formData, year, month } }),
         action({
           type,
           data: {
@@ -206,10 +205,6 @@ function RegisterForm({ type }: { type: Group }) {
       setMessageData(undefined);
     };
     fetchHistoryData();
-
-    // To delete history
-    // (async () =>
-    //   console.log(await deleteHistory("amavin", "69b5380675128ecb783da895")))();
   }, [type, year, month, refreshKey]);
 
   useEffect(() => {
@@ -358,34 +353,6 @@ function Content({
     e: React.ChangeEvent<HTMLInputElement>,
   ) => void;
 }) {
-  // const [imageKey, setImageKey] = useState<{ id: string }[]>([]);
-  // const [images, setImages] = useState(content?.images || []);
-
-  // function handleClickAddImage() {
-  //   setImageKey((prev) => [...prev, { id: nanoid() }]);
-  // }
-
-  // function handleClickDeleteImage(i: number) {
-  //   setImageKey((prev) => prev.toSpliced(i, 1));
-
-  //   // if there're content images, remove the deleted one
-  //   if (images.length) setImages((prev) => prev.toSpliced(i, 1));
-  // }
-
-  // useEffect(() => {
-  //   const assignImageKeyAndImages = () => {
-  //     setImageKey(
-  //       content
-  //         ? content.images.map((_) => {
-  //             return { id: nanoid() };
-  //           })
-  //         : [{ id: nanoid() }],
-  //     );
-  //     setImages(content?.images || []);
-  //   };
-  //   assignImageKeyAndImages();
-  // }, [content]);
-
   return (
     <div className="relative w-[90%] h-fit mt-2 flex flex-col gap-2 items-center">
       <button
@@ -396,15 +363,6 @@ function Content({
         ×
       </button>
       <h3>🍇出来事 {index + 1}</h3>
-      {/* {imageKey.map((data, i) => (
-        <ImageSelect
-          key={data.id}
-          i={i}
-          contentIndex={index}
-          image={images[i]}
-          onClickDelete={() => handleClickDeleteImage(i)}
-        />
-      ))} */}
       {images.map((data, i) => (
         <ImageSelect
           key={i}
@@ -437,7 +395,6 @@ function ImageSelect({
 }: {
   i: number;
   contentIndex: number;
-  // image: ImageData | undefined;
   image: File | undefined;
   onClickDelete: (contentIndex: number, imageIndex: number) => void;
   onChangeImage: (
@@ -449,18 +406,9 @@ function ImageSelect({
   const inputClassName = "w-[70%] px-1 mt-1";
   const [curImageUrl, setCurImageUrl] = useState("");
 
-  function handleChangeImage(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = e.currentTarget.files;
-    if (!files) return;
-
-    const url = URL.createObjectURL(files[0]);
-    setCurImageUrl(url);
-  }
-
   useEffect(() => {
     const displayImage = () => {
       setCurImageUrl(image ? URL.createObjectURL(image) : "");
-      // setCurImageUrl(image ? convertBufferToUrl(image.buffer) : "");
     };
     displayImage();
   }, [image]);
@@ -490,26 +438,9 @@ function ImageSelect({
         ) : (
           <p className={inputClassName}>{image.name}</p>
         )}
-        {/* <input
-          name={`image${contentIndex + 1}NameJa`}
-          type="text"
-          placeholder="画像の名前（日本語）"
-          value={imageNameJa}
-          className={inputClassName}
-          onChange={(e) => handleChangeName(e, "ja")}
-        ></input>
-        <input
-          name={`image${i + 1}NameEn`}
-          type="text"
-          placeholder="画像の名前（英語）"
-          value={imageNameEn}
-          className={inputClassName}
-          onChange={(e) => handleChangeName(e, "en")}
-        ></input> */}
         <button
           type="button"
           className="absolute w-4.5 aspect-square bg-[url('/trash.svg')] bg-center bg-no-repeat bg-contain right-[5%]"
-          // onClick={onClickDelete}
           onClick={() => onClickDelete(contentIndex, i)}
         ></button>
       </div>
