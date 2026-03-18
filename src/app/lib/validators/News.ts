@@ -6,8 +6,8 @@ const StringForLanguage = z.object({
 });
 
 const News = z.object({
-  date: z.string(),
-  type: z.string(),
+  date: z.string().length(10, { error: "日付は必須項目です" }),
+  type: z.string().min(1, "お知らせの種類は必須項目です"),
   content: z.object({
     title: StringForLanguage,
     sentence: z.object({

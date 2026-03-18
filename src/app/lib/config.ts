@@ -4,3 +4,7 @@ export const MIN_EACH_PASSWORD = 1;
 export const CLIENT_URL = "https://kiyos-artisan.vercel.app/";
 // For dev
 // export const CLIENT_URL = "http://localhost:3000/";
+
+export const apiResponeOptions = {
+  headers: { "Access-Control-Allow-Origin": "*" },
+};

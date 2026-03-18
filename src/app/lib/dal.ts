@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import dbConnect from "./database";
 import HistoryKiyos from "./models/HistoryKiyos";
 import HistoryAmavin from "./models/HistoryAmavin";
+import News from "./models/News";
+import { NewsData } from "./definitions";
 
 export const verifySession = cache(async () => {
   const cookie = (await cookies()).get("session")?.value;
@@ -34,6 +36,23 @@ export const getHistoryForDate = cache(
     }
   },
 );
+
+export const getNews = cache(async () => {
+  try {
+    await dbConnect();
+    const news = await News.find({});
+    const newsObj = JSON.parse(JSON.stringify(news));
+
+    // sort by date
+    return newsObj.toSorted(
+      (a: NewsData, b: NewsData) =>
+        new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
+  } catch (err: unknown) {
+    console.error("Error", err);
+    return null;
+  }
+});
 
 export const logout = cache(async () => {
   await deleteSession();

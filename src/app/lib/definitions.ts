@@ -53,6 +53,7 @@ export type RegisterHistoryData = {
 };
 
 export type NewsData = {
+  _id?: string;
   date: string;
   type: Group | "both";
   content: {
@@ -60,7 +61,7 @@ export type NewsData = {
     sentence: { en: string[]; ja: string[] };
     link: string;
   };
-  lastModifiedUserId: string;
+  lastModifiedUserId?: string;
 };
 
 export type DisplayMessageData = {

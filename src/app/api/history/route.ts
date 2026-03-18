@@ -5,13 +5,9 @@ import dbConnect from "@/app/lib/database";
 import HistoryAmavin from "@/app/lib/models/HistoryAmavin";
 import HistoryKiyos from "@/app/lib/models/HistoryKiyos";
 // settings
-import { CLIENT_URL } from "@/app/lib/config";
+import { apiResponeOptions, CLIENT_URL } from "@/app/lib/config";
 // types
 import { HistoryContent, HistoryData } from "@/app/lib/definitions";
-
-const responeOptions = {
-  headers: { "Access-Control-Allow-Origin": "*" },
-};
 
 const convertHistoryDataForSearch = (
   type: "kiyos" | "amavin",
@@ -75,7 +71,7 @@ export async function GET(req: NextRequest) {
       );
       return NextResponse.json(
         [...historyKiyosForSearch, ...historyAmavinForSearch],
-        responeOptions,
+        apiResponeOptions,
       );
     }
 
@@ -87,7 +83,7 @@ export async function GET(req: NextRequest) {
 
     const historyDataWithBase64 = convertHistoryDataWithBase64(historyData);
 
-    return NextResponse.json(historyDataWithBase64, responeOptions);
+    return NextResponse.json(historyDataWithBase64, apiResponeOptions);
   } catch (err: unknown) {
     console.error(err);
     return NextResponse.json(
