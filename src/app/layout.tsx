@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: "Kiyos Cellar & Artisan Mariage Vineyards管理者ページ",
   description: "Kiyos CellarとArtisan Mariage Vineyardsの管理者ページです。",
   metadataBase: new URL(BASE_URL),
+  robots: {
+    index: false,
+  },
 };
 
 export default function RootLayout({
