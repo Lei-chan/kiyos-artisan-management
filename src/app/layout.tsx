@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { BASE_URL } from "./lib/config";
+import dns from "node:dns";
+
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
 export const metadata: Metadata = {
   title: "Kiyos Cellar & Artisan Mariage Vineyards管理者ページ",
